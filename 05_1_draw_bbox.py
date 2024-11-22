@@ -37,11 +37,16 @@ final_point.colors = o3d.utility.Vector3dVector(colors)
 # 필터링 기준 설정
 min_points_in_cluster = 5   # 클러스터 내 최소 포인트 수
 max_points_in_cluster = 40  # 클러스터 내 최대 포인트 수
-min_z_value = -1.5          # 클러스터 내 최소 Z값
+min_z_value = -1.0          # 클러스터 내 최소 Z값
 max_z_value = 2.5           # 클러스터 내 최대 Z값
 min_height = 0.5            # Z값 차이의 최소값
 max_height = 2.0            # Z값 차이의 최대값
 max_distance = 30.0         # 원점으로부터의 최대 거리
+
+# 새로운 필터링 기준 설정
+road_z_value = -plane_model[3] / plane_model[2]
+road_tolerance = 2.0
+
 
 # 1번, 2번, 3번 조건을 모두 만족하는 클러스터 필터링 및 바운딩 박스 생성
 bboxes_1234 = []
@@ -53,7 +58,8 @@ for i in range(labels.max() + 1):
         z_values = points[:, 2]
         z_min = z_values.min()
         z_max = z_values.max()
-        if min_z_value <= z_min and z_max <= max_z_value:
+        #if min_z_value <= z_min and z_max <= max_z_value:
+        if road_z_value - road_tolerance <= z_min and z_max <= road_z_value + road_tolerance:   
             height_diff = z_max - z_min
             if min_height <= height_diff <= max_height:
                 distances = np.linalg.norm(points, axis=1)
@@ -75,3 +81,11 @@ def visualize_with_bounding_boxes(pcd, bounding_boxes, window_name="Filtered Clu
 
 # 시각화 (포인트 크기를 원하는 크기로 조절 가능)
 visualize_with_bounding_boxes(final_point, bboxes_1234, point_size=2.0)
+
+
+
+
+
+
+
+
