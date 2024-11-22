@@ -43,9 +43,15 @@ min_height = 0.5            # Z값 차이의 최소값
 max_height = 2.0            # Z값 차이의 최대값
 max_distance = 30.0         # 원점으로부터의 최대 거리
 
-# 새로운 필터링 기준 설정
+# 떠있는 객체 제외를 위한 설정
 road_z_value = -plane_model[3] / plane_model[2]
 road_tolerance = 2.0
+# 형상 분석을 위한 조건 설정
+min_aspect_ratio = 1.0  # 세로:가로 비율의 최소값
+max_aspect_ratio = 3.0  # 세로:가로 비율의 최대값
+
+
+
 
 
 # 1번, 2번, 3번 조건을 모두 만족하는 클러스터 필터링 및 바운딩 박스 생성
@@ -68,6 +74,17 @@ for i in range(labels.max() + 1):
                     bbox.color = (1, 0, 0) 
                     bboxes_1234.append(bbox)
 
+bboxes_shape_filtered = []
+for bbox in bboxes_1234:
+    extent = bbox.get_extent()  # Bounding Box 크기 (Width, Depth, Height)
+    height = extent[2]  # Z축 길이
+    max_width = max(extent[0], extent[1])  # X, Y 축 중 더 큰 값을 가로로 간주
+    aspect_ratio = height / max_width  # 세로:가로 비율 계산
+
+    # 형상 조건을 만족하는 경우만 필터링
+    if min_aspect_ratio <= aspect_ratio <= max_aspect_ratio:
+        bboxes_shape_filtered.append(bbox)
+
 # 포인트 클라우드 및 바운딩 박스를 시각화하는 함수
 def visualize_with_bounding_boxes(pcd, bounding_boxes, window_name="Filtered Clusters and Bounding Boxes", point_size=1.0):
     vis = o3d.visualization.Visualizer()
@@ -80,7 +97,8 @@ def visualize_with_bounding_boxes(pcd, bounding_boxes, window_name="Filtered Clu
     vis.destroy_window()
 
 # 시각화 (포인트 크기를 원하는 크기로 조절 가능)
-visualize_with_bounding_boxes(final_point, bboxes_1234, point_size=2.0)
+#visualize_with_bounding_boxes(final_point, bboxes_1234, point_size=2.0)
+visualize_with_bounding_boxes(final_point, bboxes_shape_filtered, point_size=2.0)
 
 
 
