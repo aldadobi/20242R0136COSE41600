@@ -4,7 +4,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # pcd 파일 불러오기, 필요에 맞게 경로 수정
-file_path = "test_data/1727320101-665925967.pcd"
+#file_path = "test_data/1727320101-665925967.pcd" # 1
+#file_path = "test_data/1727320101-961578277.pcd" # 2
+file_path = "test_data/1727320102-53276943.pcd" # 3
+
 # PCD 파일 읽기
 original_pcd = o3d.io.read_point_cloud(file_path)
 
@@ -47,8 +50,8 @@ max_distance = 30.0         # 원점으로부터의 최대 거리
 road_z_value = -plane_model[3] / plane_model[2]
 road_tolerance = 2.0
 # 형상 분석을 위한 조건 설정
-min_aspect_ratio = 1.0  # 세로:가로 비율의 최소값
-max_aspect_ratio = 3.0  # 세로:가로 비율의 최대값
+min_aspect_ratio = 1.25  # 세로:가로 비율의 최소값, 앉아있거나
+max_aspect_ratio = 2 # 세로:가로 비율의 최대값
 
 
 
