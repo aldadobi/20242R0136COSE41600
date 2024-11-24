@@ -12,7 +12,7 @@ voxel_size = 0.2
 downsample_pcd = original_pcd.voxel_down_sample(voxel_size=voxel_size)
 
 # Radius Outlier Removal (ROR)
-cl, ind = downsample_pcd.remove_radius_outlier(nb_points=4, radius=1.5)
+cl, ind = downsample_pcd.remove_radius_outlier(nb_points=6, radius=1.2)
 ror_pcd = downsample_pcd.select_by_index(ind)
 
 # RANSAC을 사용한 평면 추정
@@ -23,7 +23,7 @@ final_point = ror_pcd.select_by_index(inliers, invert=True)
 
 # DBSCAN 클러스터링
 with o3d.utility.VerbosityContextManager(o3d.utility.VerbosityLevel.Debug) as cm:
-    labels = np.array(final_point.cluster_dbscan(eps=0.3, min_points=10, print_progress=True))
+    labels = np.array(final_point.cluster_dbscan(eps=0.3, min_points=8, print_progress=True))
 
 # 포인트 클라우드 색상 지정
 colors = np.zeros((len(labels), 3))
@@ -33,12 +33,12 @@ final_point.colors = o3d.utility.Vector3dVector(colors)
 # 필터링 기준 설정
 min_points_in_cluster = 5
 max_points_in_cluster = 40
-min_height = 0.5
+min_height = 0.25
 max_height = 2.0
 max_distance = 30.0
 min_aspect_ratio = 1.0
-max_aspect_ratio = 4.0
-road_tolerance = 0.75
+max_aspect_ratio = 3.0
+road_tolerance = 0.7
 
 # Bounding Box의 하단 중심점과 도로 평면 간 거리 필터링 함수
 def filter_bboxes_by_road_proximity(bboxes, road_plane, road_tolerance):
