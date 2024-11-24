@@ -106,7 +106,28 @@ visualize_with_bounding_boxes(final_point, bboxes_shape_filtered, point_size=2.0
 
 
 
+###
+def visualize_plane(plane_model, point_cloud, plane_size=10.0):
 
+    a, b, c, d = plane_model
+    
+    x = np.linspace(-plane_size, plane_size, 10)
+    y = np.linspace(-plane_size, plane_size, 10)
+    X, Y = np.meshgrid(x, y)
+    Z = (-d - a * X - b * Y) / c  # z = (-d - ax - by) / c
 
+    # 평면 포인트 클라우드 생성
+    plane_points = np.stack((X.flatten(), Y.flatten(), Z.flatten()), axis=1)
+    plane_pcd = o3d.geometry.PointCloud(o3d.utility.Vector3dVector(plane_points))
+    plane_pcd.paint_uniform_color([1, 0, 0])  # 평면 색상을 빨간색으로 설정
 
+    # 포인트 클라우드와 평면 시각화
+    vis = o3d.visualization.Visualizer()
+    vis.create_window(window_name="RANSAC Plane Visualization")
+    vis.add_geometry(point_cloud)  
+    vis.add_geometry(plane_pcd)  
+    vis.destroy_window()
+
+# 평면 시각화
+visualize_plane(plane_model, ror_pcd)
 
