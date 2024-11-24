@@ -34,20 +34,21 @@ def multi_plane_segmentation(pcd, distance_threshold=0.1, num_iterations=2000, m
     return planes, inliers_list
 
 # 클러스터와 평면 간의 관계를 분석하여 필터링
-def filter_clusters_by_plane_relation(clusters, planes, tolerance=1.0):
-    filtered_clusters = []
-    for cluster in clusters:
-        points = np.asarray(cluster.points)
-        keep_cluster = False
-        for plane_model in planes:
-            a, b, c, d = plane_model
-            distances = np.abs(a * points[:, 0] + b * points[:, 1] + c * points[:, 2] + d) / np.sqrt(a**2 + b**2 + c**2)
-            if np.mean(distances) < tolerance:  # 클러스터가 평면에 가까운 경우
-                keep_cluster = True
-                break
-        if keep_cluster:
-            filtered_clusters.append(cluster)
-    return filtered_clusters
+
+# def filter_clusters_by_plane_relation(clusters, planes, tolerance=1.0):
+#     filtered_clusters = []
+#     for cluster in clusters:
+#         points = np.asarray(cluster.points)
+#         keep_cluster = False
+#         for plane_model in planes:
+#             a, b, c, d = plane_model
+#             distances = np.abs(a * points[:, 0] + b * points[:, 1] + c * points[:, 2] + d) / np.sqrt(a**2 + b**2 + c**2)
+#             if np.mean(distances) < tolerance:  # 클러스터가 평면에 가까운 경우
+#                 keep_cluster = True
+#                 break
+#         if keep_cluster:
+#             filtered_clusters.append(cluster)
+#     return filtered_clusters
 
 # 떠 있는 객체 제외를 위한 설정
 def filter_clusters_by_road_tolerance(clusters, road_plane, road_tolerance):
@@ -59,6 +60,23 @@ def filter_clusters_by_road_tolerance(clusters, road_plane, road_tolerance):
         if np.mean(distances) < road_tolerance:  # 도로 평면에 가까운 경우
             filtered_clusters.append(cluster)
     return filtered_clusters
+
+def filter_bboxes_by_road_proximity(bboxes, road_plane, road_tolerance):
+    filtered_bboxes = []
+    a, b, c, d = road_plane  # 평면 방정식 계수
+    for bbox in bboxes:
+        # Bounding Box의 아래쪽 중심 좌표 계산
+        min_bound = bbox.get_min_bound()  # Bounding Box의 최소 경계점 (x_min, y_min, z_min)
+        base_center = np.array([min_bound[0] + bbox.get_extent()[0] / 2,  # x 중심
+                                 min_bound[1] + bbox.get_extent()[1] / 2,  # y 중심
+                                 min_bound[2]])  # z_min 그대로 사용
+
+        # 도로 평면과의 거리 계산
+        distance_to_road = np.abs(a * base_center[0] + b * base_center[1] + c * base_center[2] + d) / np.sqrt(a**2 + b**2 + c**2)
+        if distance_to_road < road_tolerance:  # 도로 평면에 가까운 경우
+            filtered_bboxes.append(bbox)
+    return filtered_bboxes
+
 
 # 다중 평면 추정
 planes, inliers_list = multi_plane_segmentation(ror_pcd)
@@ -78,11 +96,11 @@ with o3d.utility.VerbosityContextManager(o3d.utility.VerbosityLevel.Debug) as cm
 clusters = [final_point.select_by_index(np.where(labels == i)[0]) for i in range(labels.max() + 1)]
 
 # 클러스터와 평면 간 관계로 필터링
-filtered_clusters = filter_clusters_by_plane_relation(clusters, planes)
+#filtered_clusters = filter_clusters_by_plane_relation(clusters, planes)
+#filtered_clusters = [cluster for cluster in clusters if len(cluster.points) > 0]
 
 # 도로 평면 기반 추가 필터링
-road_tolerance = 2.0
-road_filtered_clusters = filter_clusters_by_road_tolerance(filtered_clusters, road_plane, road_tolerance)
+#road_filtered_clusters = filter_clusters_by_road_tolerance(filtered_clusters, road_plane, road_tolerance)
 
 # 필터링 기준 설정
 min_points_in_cluster = 5
@@ -91,13 +109,9 @@ min_height = 0.5
 max_height = 2.0
 max_distance = 30.0
 
-#형상 분석을 위한 조건 설정
-min_aspect_ratio = 1.00
-max_aspect_ratio = 2.50
-
 # Bounding Box 생성 및 필터링
-bboxes_road_filtered = []
-for cluster in road_filtered_clusters:
+bboxes = []
+for cluster in clusters:
     points = np.asarray(cluster.points)
     z_values = points[:, 2]
     z_min = z_values.min()
@@ -109,11 +123,18 @@ for cluster in road_filtered_clusters:
             if distances.max() <= max_distance:
                 bbox = cluster.get_axis_aligned_bounding_box()
                 bbox.color = (1, 0, 0)  # 빨간색으로 설정
-                bboxes_road_filtered.append(bbox)
+                bboxes.append(bbox)
+# 도로 평면 기반 추가 필터링
+road_tolerance = 0.75
+bboxes_proximity_filtered = filter_bboxes_by_road_proximity(bboxes, road_plane, road_tolerance)
 
-# 형상 분석 필터링
+# 형상 분석 필터링 및 조건 설정
 bboxes_shape_filtered = []
-for bbox in bboxes_road_filtered:
+
+min_aspect_ratio = 1.5
+max_aspect_ratio = 3.5
+
+for bbox in bboxes_proximity_filtered:
     extent = bbox.get_extent()
     height = extent[2]
     max_width = max(extent[0], extent[1])
