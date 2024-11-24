@@ -132,7 +132,7 @@ bboxes_proximity_filtered = filter_bboxes_by_road_proximity(bboxes, road_plane, 
 bboxes_shape_filtered = []
 
 min_aspect_ratio = 1.5
-max_aspect_ratio = 3.5
+max_aspect_ratio = 2.5
 
 for bbox in bboxes_proximity_filtered:
     extent = bbox.get_extent()
