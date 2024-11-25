@@ -4,7 +4,11 @@ import matplotlib.pyplot as plt
 import os
 
 # PCD 파일이 저장된 디렉토리 경로
-pcd_directory = "/home/youngeon/바탕화면/ad/COSE416_HW1_tutorial/COSE416_HW1_tutorial/data/01_straight_walk/pcd"
+#pcd_directory = "/home/youngeon/바탕화면/ad/COSE416_HW1_tutorial/COSE416_HW1_tutorial/data/01_straight_walk/pcd"
+pcd_directory = "/home/youngeon/바탕화면/ad/COSE416_HW1_tutorial/COSE416_HW1_tutorial/data/07_straight_walk/pcd"
+#01_straight_walk-> 바꿔 가며 진행 
+# ffmpeg -framerate 30 -i output_frames_01/frame_%04d.png output_video.mp4 
+# video 만드는 코드
 output_directory = "./output_frames"
 
 # 출력 디렉토리 생성
@@ -62,8 +66,8 @@ for idx, file_name in enumerate(pcd_files):
     min_height = 0.25
     max_height = 2.0
     max_distance = 30.0
-    min_aspect_ratio = 1.0
-    max_aspect_ratio = 3.0
+    min_aspect_ratio = 1.25
+    max_aspect_ratio = 4.0
     road_tolerance = 0.7
 
     # Bounding Box 생성
@@ -82,6 +86,7 @@ for idx, file_name in enumerate(pcd_files):
                 if distances.max() <= max_distance:
                     bbox = cluster_pcd.get_axis_aligned_bounding_box()
                     bbox.color = (1, 0, 0)  # 빨간색
+                    bbox.scale(1.5, bbox.get_center()) 
                     bboxes.append(bbox)
 
     # 도로 평면과의 거리로 Bounding Box 필터링
@@ -97,7 +102,7 @@ for idx, file_name in enumerate(pcd_files):
             if distance_to_road < road_tolerance:
                 filtered_bboxes.append(bbox)
         return filtered_bboxes
-
+    
     bboxes_proximity_filtered = filter_bboxes_by_road_proximity(bboxes, plane_model, road_tolerance)
 
     # 형상 분석 필터링
